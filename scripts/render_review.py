@@ -308,6 +308,13 @@ class Page:
         for it in ITEMS:
             r = sc["items"].get(it["id"], {})
             if r.get("score") is None:
+                # Part of this call type but couldn't be judged (e.g. the recording starts mid-call): say so,
+                # never drop the row, or it reads as a skipped grade. Parts outside the call type stay hidden.
+                if it["id"] in CALL_TYPES.get(sc.get("call_type"), {}).get("items", []):
+                    why = (j.get("items") or {}).get(it["id"]) or next(
+                        (c.get("note") for c in (r.get("checks") or {}).values() if c.get("note")), "") or "couldn't be judged on this call"
+                    board += (f'<li><div class="row static" id="m-{it["id"]}"><span class="sw sna">N/A</span><span class="nm">{e(it.get("page", it["name"]))}</span>'
+                              f'<span class="tx">{e(why[:1].upper() + why[1:])}</span></div></li>')
                 continue
             nxt = f'<a class="tonext" href="#s-{it["id"]}">What to say next time ↓</a>' if it["id"] in steps else ""
             board += (f'<li><details class="row" id="m-{it["id"]}"><summary>{self.status(it["id"])}<span class="nm">{e(it.get("page", it["name"]))}</span>'
